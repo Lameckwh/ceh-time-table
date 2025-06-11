@@ -277,7 +277,7 @@ export default function Home() {
                 Facilitator Selection Process
               </h3>
               <p className="text-sm sm:text-base leading-relaxed">
-                The app assigns facilitators for Tuesday and Thursday meetings using a round-robin algorithm. On these days at 9 PM CAT, buttons appear to confirm if the current facilitator presented. Clicking "Yes" advances to the next team member; "No" retains the current facilitator. Buttons disappear after clicking and reappear at 9 PM on the next meeting day. The facilitator list cycles through: Lameck Mbewe, Hopkins Ceaser, Joseph Dzanja, Lucius Malizani.
+                The app assigns facilitators for Tuesday and Thursday meetings using a round-robin algorithm. On these days at 9 PM CAT, buttons appear to confirm if the current facilitator presented. Clicking &quot;Yes&quot; advances to the next team member; &quot;No&quot; retains the current facilitator. Buttons disappear after clicking and reappear at 9 PM on the next meeting day. The facilitator list cycles through: Lameck Mbewe, Hopkins Ceaser, Joseph Dzanja, Lucius Malizani.
               </p>
             </div>
           </div>
