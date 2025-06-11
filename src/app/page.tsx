@@ -4,10 +4,11 @@ import { useState, useEffect } from "react";
 
 export default function Home() {
   const teamMembers = [
-    "Lameck Mbewe",
-    "Hopkins Ceaser",
-    "Joseph Dzanja",
     "Lucius Malizani",
+    "Hopkins Ceaser",
+      "Lameck Mbewe",
+    "Joseph Dzanja",
+    
   ];
 
   // State for current facilitator index
