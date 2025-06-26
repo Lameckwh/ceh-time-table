@@ -7,7 +7,8 @@ export default function Home() {
     "Lucius Malizani",
     "Hopkins Ceaser",
     "Joseph Dzanja",
-     "Lameck Mbewe",
+    "Lameck Mbewe",
+    "Astonie Mukiwa",
   ];
 
   // State for current facilitator index
@@ -19,17 +20,11 @@ export default function Home() {
     return 0;
   });
 
-  // State for selected facilitator name
-  const [selectedFacilitator, setSelectedFacilitator] = useState<string | null>(null);
-
   // State for next meeting date
   const [nextMeetingDate, setNextMeetingDate] = useState("");
 
   // State for accordion open/closed
   const [openWeek, setOpenWeek] = useState<number | null>(null);
-
-  // State for choose button visibility
-  const [showChooseButton, setShowChooseButton] = useState(false);
 
   // State for facilitator name visibility
   const [showFacilitatorName, setShowFacilitatorName] = useState(false);
@@ -186,45 +181,35 @@ export default function Home() {
     });
   };
 
-  // Check button and facilitator name visibility
-  const checkVisibility = () => {
+  // Automatically update facilitator at 8 PM CAT on Tuesday/Thursday
+  const updateFacilitator = () => {
     const now = new Date();
     const catTime = new Date(now.toLocaleString("en-US", { timeZone: "Africa/Harare" }));
     const day = catTime.getDay();
     const hours = catTime.getHours();
-    const hasChosen = localStorage.getItem(`chosen_${catTime.toDateString()}`);
-
-    // Show button at 8 PM on Tuesday or Thursday if not chosen
-    const isButtonTime = (day === 2 || day === 4) && hours >= 20 && hours < 21 && !hasChosen;
-    setShowChooseButton(isButtonTime);
-
-    // Show facilitator name after selection until 9 PM if chosen
-    const isNameVisible = (day === 2 || day === 4) && !!hasChosen && hours < 21;
-    setShowFacilitatorName(isNameVisible);
+    // Only update at 8 PM on Tuesday or Thursday
+    if ((day === 2 || day === 4) && hours === 20) {
+      const savedIndex = localStorage.getItem("facilitatorIndex");
+      const newIndex = savedIndex !== null ? (parseInt(savedIndex, 10) + 1) % teamMembers.length : 0;
+      setFacilitatorIndex(newIndex);
+      localStorage.setItem("facilitatorIndex", newIndex.toString());
+      setShowFacilitatorName(true);
+    } else if ((day === 2 || day === 4) && hours > 20 && hours < 21) {
+      setShowFacilitatorName(true);
+    } else {
+      setShowFacilitatorName(false);
+    }
   };
 
-  // Update meeting date and check visibility every minute
   useEffect(() => {
     setNextMeetingDate(getNextMeetingDate());
-    checkVisibility();
-    const interval = setInterval(checkVisibility, 60000);
+    updateFacilitator();
+    const interval = setInterval(() => {
+      setNextMeetingDate(getNextMeetingDate());
+      updateFacilitator();
+    }, 60000);
     return () => clearInterval(interval);
   }, []);
-
-  // Handle Choose Facilitator button click
-  const handleChooseFacilitator = () => {
-    const now = new Date();
-    const catTime = new Date(now.toLocaleString("en-US", { timeZone: "Africa/Harare" }));
-    // Select the next facilitator in round-robin
-    const newIndex = (facilitatorIndex + 1) % teamMembers.length;
-    setFacilitatorIndex(newIndex);
-    setSelectedFacilitator(teamMembers[newIndex]);
-    localStorage.setItem("facilitatorIndex", newIndex.toString());
-    localStorage.setItem(`chosen_${catTime.toDateString()}`, "true");
-    setShowChooseButton(false);
-    setShowFacilitatorName(true);
-    setNextMeetingDate(getNextMeetingDate());
-  };
 
   // Toggle accordion week
   const toggleWeek = (index: number) => {
@@ -247,27 +232,14 @@ export default function Home() {
               Facilitator Schedule
             </h2>
             <div className="flex flex-col gap-3 sm:gap-4 text-center">
-              {showFacilitatorName && selectedFacilitator && (
+              {showFacilitatorName && (
                 <p className="text-base sm:text-lg leading-relaxed">
-                  <strong>Current Facilitator:</strong> {selectedFacilitator}
+                  <strong>Current Facilitator:</strong> {teamMembers[facilitatorIndex]}
                 </p>
               )}
               <p className="text-base sm:text-lg leading-relaxed">
                 <strong>Next Meeting:</strong> {nextMeetingDate}
               </p>
-              {showChooseButton && (
-                <div className="flex flex-col gap-3 sm:gap-4 items-center">
-                  <p className="text-base sm:text-lg font-medium leading-relaxed">
-                    Select today&apos;s facilitator
-                  </p>
-                  <button
-                    onClick={handleChooseFacilitator}
-                    className="rounded-full bg-cyan-600 text-white px-4 py-2 sm:px-6 sm:py-3 text-base sm:text-lg hover:bg-cyan-700 transition-colors min-w-[120px]"
-                  >
-                    Choose Facilitator
-                  </button>
-                </div>
-              )}
             </div>
             {/* Information Section */}
             <div className="mt-4 sm:mt-6 p-4 bg-gray-700 dark:bg-gray-800 rounded-md">
@@ -275,7 +247,7 @@ export default function Home() {
                 Facilitator Selection Process
               </h3>
               <p className="text-sm sm:text-base leading-relaxed">
-                The app assigns facilitators for Tuesday and Thursday meetings using a round-robin algorithm to ensure all members prepare. At 8 PM CAT, a &quot;Choose Facilitator&quot; button appears. Clicking it selects the next team member, displays their name, and hides the button. The name disappears at 9 PM CAT. The facilitator list cycles through: Lucius Malizani, Hopkins Ceaser, Lameck Mbewe, Joseph Dzanja.
+                The app automatically assigns facilitators for Tuesday and Thursday meetings using a round-robin algorithm to ensure all members prepare. At 8 PM CAT, the next facilitator is selected and their name is displayed until 9 PM CAT. The facilitator list cycles through: Lucius Malizani, Hopkins Ceaser, Lameck Mbewe, Joseph Dzanja, Astonie Mukiwa.
               </p>
             </div>
           </div>
