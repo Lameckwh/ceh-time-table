@@ -356,9 +356,10 @@ export default function Home() {
             {timetable.map((week, idx) => (
               <div key={week.week} className="bg-gray-800 rounded-lg shadow border border-cyan-700/20">
                 <button
+           
                   className="w-full flex justify-between items-center px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-cyan-400"
                   onClick={() => setOpenWeek(openWeek === idx ? null : idx)}
-                  aria-expanded={openWeek === idx ? "true" : "false"}
+                  aria-expanded={openWeek === idx ? true : false}
                   aria-controls={`week-details-${idx}`}
                 >
                   <span className="font-semibold text-cyan-300 text-sm sm:text-base truncate" title={week.week}>{week.week}</span>
