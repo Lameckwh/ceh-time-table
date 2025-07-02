@@ -1,6 +1,8 @@
-"use client";
 
+"use client";
 import { useState, useEffect } from "react";
+import { FiInfo, FiX } from "react-icons/fi";
+ 
 
 export default function Home() {
   const teamMembers = [
@@ -10,34 +12,22 @@ export default function Home() {
     "Lameck Mbewe",
     "Astonie Mukiwa",
   ];
-
-  // State for current facilitator index
-  const [facilitatorIndex, setFacilitatorIndex] = useState(() => {
-    if (typeof window !== "undefined") {
-      const savedIndex = localStorage.getItem("facilitatorIndex");
-      return savedIndex !== null ? parseInt(savedIndex, 10) % teamMembers.length : 0;
-    }
-    return 0;
-  });
-
-  // State for next meeting date
+  const [facilitatorIndex, setFacilitatorIndex] = useState(0);
+  const [showFacilitatorName, setShowFacilitatorName] = useState(false);
   const [nextMeetingDate, setNextMeetingDate] = useState("");
-
-  // State for accordion open/closed
+  const [showInfo, setShowInfo] = useState(false);
+  const [showAllTopics, setShowAllTopics] = useState(false);
   const [openWeek, setOpenWeek] = useState<number | null>(null);
 
-  // State for facilitator name visibility
-  const [showFacilitatorName, setShowFacilitatorName] = useState(false);
-
-  // CEH Study Timetable Data
+  // Timetable data (shortened for brevity, expand as needed)
   const timetable = [
     {
       week: "Week 1 (June 10–15)",
-      title: "Introduction + Domain 1: Information Security and Ethical Hacking",
+      title: "Introduction + Domain 1: Information Security and Ethical Hacking Overview",
       details: [
         "Concepts: InfoSec fundamentals, hacking phases, attack vectors, threat categories",
-        "Tools: Terminology",
-        "Task: Set up lab environment",
+        "Tools: Terminology, hacker types",
+        "Task: Set up lab environment (Kali Linux, vulnerable VMs)",
       ],
     },
     {
@@ -159,137 +149,272 @@ export default function Home() {
     },
   ];
 
-  // Function to get next Tuesday or Thursday
-  const getNextMeetingDate = () => {
-    const today = new Date();
-    const dayOfWeek = today.getDay();
+  // Get next Tuesday or Thursday with time (20:00 CAT), but if today is a meeting day and before 8:15pm, show today
+  const getNextMeetingDateTime = () => {
+    const now = new Date();
+    const catNow = new Date(now.toLocaleString("en-US", { timeZone: "Africa/Harare" }));
+    const day = catNow.getDay();
+    const hours = catNow.getHours();
+    const minutes = catNow.getMinutes();
+    // If today is Tues (2) or Thurs (4) and before 8:15pm, show today at 8pm
+    if ((day === 2 || day === 4) && (hours < 20 || (hours === 20 && minutes < 15))) {
+      const today8pm = new Date(catNow);
+      today8pm.setHours(20, 0, 0, 0);
+      return today8pm.toLocaleString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+        timeZone: "Africa/Harare"
+      });
+    }
+    // Otherwise, find the next meeting (same as before)
     let daysUntilNextMeeting = 0;
-
-    if (dayOfWeek <= 1) daysUntilNextMeeting = 2 - dayOfWeek; // Sunday to Monday -> Tuesday
-    else if (dayOfWeek === 2) daysUntilNextMeeting = 2; // Tuesday -> Thursday
-    else if (dayOfWeek === 3) daysUntilNextMeeting = 1; // Wednesday -> Thursday
-    else if (dayOfWeek === 4) daysUntilNextMeeting = 5; // Thursday -> Tuesday
-    else daysUntilNextMeeting = 2 + (7 - dayOfWeek); // Friday to Saturday -> Tuesday
-
-    const nextDate = new Date(today);
-    nextDate.setDate(today.getDate() + daysUntilNextMeeting);
-    return nextDate.toLocaleDateString("en-US", {
+    if (day <= 1) daysUntilNextMeeting = 2 - day;
+    else if (day === 2) daysUntilNextMeeting = 2;
+    else if (day === 3) daysUntilNextMeeting = 1;
+    else if (day === 4) daysUntilNextMeeting = 5;
+    else daysUntilNextMeeting = 2 + (7 - day);
+    const nextDate = new Date(catNow);
+    nextDate.setDate(catNow.getDate() + daysUntilNextMeeting);
+    nextDate.setHours(20, 0, 0, 0);
+    return nextDate.toLocaleString("en-US", {
       weekday: "long",
       year: "numeric",
       month: "long",
       day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+      timeZone: "Africa/Harare"
     });
   };
 
-  // Automatically update facilitator at 8 PM CAT on Tuesday/Thursday
-  const updateFacilitator = () => {
-    const now = new Date();
-    const catTime = new Date(now.toLocaleString("en-US", { timeZone: "Africa/Harare" }));
-    const day = catTime.getDay();
-    const hours = catTime.getHours();
-    // Only update at 8 PM on Tuesday or Thursday
-    if ((day === 2 || day === 4) && hours === 20) {
-      const savedIndex = localStorage.getItem("facilitatorIndex");
-      const newIndex = savedIndex !== null ? (parseInt(savedIndex, 10) + 1) % teamMembers.length : 0;
-      setFacilitatorIndex(newIndex);
-      localStorage.setItem("facilitatorIndex", newIndex.toString());
-      setShowFacilitatorName(true);
-    } else if ((day === 2 || day === 4) && hours > 20 && hours < 21) {
-      setShowFacilitatorName(true);
-    } else {
-      setShowFacilitatorName(false);
-    }
-  };
-
+  // Fetch current facilitator from API
   useEffect(() => {
-    setNextMeetingDate(getNextMeetingDate());
-    updateFacilitator();
+    async function fetchFacilitator() {
+      const res = await fetch("/api/facilitator");
+      const data = await res.json();
+      setFacilitatorIndex(data.index);
+    }
+    fetchFacilitator();
+    setNextMeetingDate(getNextMeetingDateTime());
+    // Show facilitator name at the right time (production logic)
+    const checkTime = () => {
+      const now = new Date();
+      const catTime = new Date(now.toLocaleString("en-US", { timeZone: "Africa/Harare" }));
+      const day = catTime.getDay();
+      const hours = catTime.getHours();
+      setShowFacilitatorName((day === 2 || day === 4) && hours >= 20 && hours < 21);
+      // If after 8:15 PM CAT, update next meeting date to the following meeting
+      if ((day === 2 || day === 4) && (hours > 20 || (hours === 20 && catTime.getMinutes() >= 15))) {
+        setNextMeetingDate(getNextMeetingDateTime());
+      }
+    };
+    checkTime();
     const interval = setInterval(() => {
-      setNextMeetingDate(getNextMeetingDate());
-      updateFacilitator();
+      fetchFacilitator();
+      checkTime();
     }, 60000);
     return () => clearInterval(interval);
   }, []);
 
-  // Toggle accordion week
-  const toggleWeek = (index: number) => {
-    setOpenWeek(index === openWeek ? null : index);
+  // Toggle accordion week (not used in new design, but kept for reference)
+  // const toggleWeek = (index: number) => {
+  //   setOpenWeek(index === openWeek ? null : index);
+  // };
+
+  // Helper to get previous/current/next topic info
+  const getTopicInfo = (offset: -1 | 0 | 1, facilitatorIdx: number, timetableArr: typeof timetable) => {
+    let weekIdx = facilitatorIdx + offset;
+    if (weekIdx < 0) weekIdx = timetableArr.length - 1;
+    if (weekIdx >= timetableArr.length) weekIdx = 0;
+    const week = timetableArr[weekIdx];
+    return week;
   };
 
+  // TopicCard component (improved design & mobile responsive)
+  const TopicCard = ({ label, weekInfo }: { label: string; weekInfo: { week: string; title: string; details: string[] } }) => (
+    <div
+      className="flex flex-col items-start bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl shadow-lg p-4 min-h-[140px] w-full border border-cyan-700/30 transition-transform hover:scale-[1.03] hover:shadow-xl"
+    >
+      <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">{label}</span>
+      <span className="font-semibold text-base sm:text-lg text-cyan-200 mb-1 truncate w-full" title={weekInfo.week}>{weekInfo.week}</span>
+      <span className="text-sm sm:text-base text-white font-medium mb-2 truncate w-full" title={weekInfo.title}>{weekInfo.title}</span>
+      {/* Optionally, show details: <ul>...</ul> */}
+    </div>
+  );
+
   return (
-    <div className="min-h-screen p-4 sm:p-6 lg:p-8 bg-gradient-to-b from-gray-900 to-gray-800 dark:from-gray-900 dark:to-gray-900 text-white font-mono">
-      <div className="max-w-screen-xl mx-auto">
-        <header className="text-center mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-tight text-cyan-400">
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 text-white font-mono relative">
+      {/* Info Button */}
+      <button
+        className="absolute top-4 right-4 text-cyan-300 text-2xl hover:text-cyan-400 focus:outline-none"
+        aria-label="Info"
+        onClick={() => setShowInfo(true)}
+      >
+        <FiInfo />
+      </button>
+
+      {/* Info Modal */}
+      {showInfo && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="bg-gray-900 rounded-lg shadow-lg p-6 max-w-md w-full relative">
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-cyan-400 text-xl"
+              onClick={() => setShowInfo(false)}
+              aria-label="Close"
+            >
+              <FiX />
+            </button>
+            <h2 className="text-xl font-bold mb-2 text-cyan-300">About This App</h2>
+            <p className="text-base leading-relaxed mb-2">
+              This app manages the Ethical Hacking Study Group schedule, automatically assigning facilitators for each session and displaying the current, previous, and next topics. Facilitator selection is persistent and fair, and the UI is designed for clarity and focus.
+            </p>
+            <ul className="list-disc pl-5 text-sm text-gray-300 mb-2">
+              <li>Facilitator is chosen in a round-robin, persistent way.</li>
+              <li>Current, previous, and next topics are always visible.</li>
+              <li>Schedule and facilitator logic is automated for the group.</li>
+            </ul>
+            <p className="text-xs text-gray-500">Built for Ethical Hacking v13 Certification Study Group</p>
+          </div>
+        </div>
+      )}
+
+      {/* Main Content */}
+      <div className="flex flex-col items-center gap-8 w-full max-w-2xl p-2 sm:p-4">
+        {/* Hero Section - Improved */}
+        <section className="w-full flex flex-col items-center justify-center bg-gradient-to-br from-cyan-900/80 to-gray-800 rounded-2xl shadow-2xl p-8 mb-2 border border-cyan-700/40 relative overflow-hidden max-w-4xl">
+          <div className="absolute inset-0 pointer-events-none">
+            <svg width="100%" height="100%" className="opacity-20" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="glow" cx="50%" cy="50%" r="80%">
+                  <stop offset="0%" stopColor="#22d3ee" stopOpacity="0.3" />
+                  <stop offset="100%" stopColor="#0e7490" stopOpacity="0" />
+                </radialGradient>
+              </defs>
+              <circle cx="50%" cy="50%" r="80%" fill="url(#glow)" />
+            </svg>
+          </div>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold text-cyan-300 drop-shadow mb-2 z-10 text-center">
             Ethical Hacking Study Group
           </h1>
-        </header>
-
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6 lg:gap-8">
-          {/* Facilitator Section */}
-          <div className="lg:w-1/2 flex flex-col items-center gap-4 sm:gap-6 p-4 sm:p-6 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-lg">
-            <h2 className="text-xl sm:text-2xl font-semibold text-cyan-300">
-              Facilitator Schedule
-            </h2>
-            <div className="flex flex-col gap-3 sm:gap-4 text-center">
-              {showFacilitatorName && (
-                <p className="text-base sm:text-lg leading-relaxed">
-                  <strong>Current Facilitator:</strong> {teamMembers[facilitatorIndex]}
-                </p>
-              )}
-              <p className="text-base sm:text-lg leading-relaxed">
-                <strong>Next Meeting:</strong> {nextMeetingDate}
-              </p>
-            </div>
-            {/* Information Section */}
-            <div className="mt-4 sm:mt-6 p-4 bg-gray-700 dark:bg-gray-800 rounded-md">
-              <h3 className="text-base sm:text-lg font-semibold text-cyan-300 mb-2">
-                Facilitator Selection Process
-              </h3>
-              <p className="text-sm sm:text-base leading-relaxed">
-                The app automatically assigns facilitators for Tuesday and Thursday meetings using a round-robin algorithm to ensure all members prepare. At 8 PM CAT, the next facilitator is selected and their name is displayed until 9 PM CAT. The facilitator list cycles through: Lucius Malizani, Hopkins Ceaser, Lameck Mbewe, Joseph Dzanja, Astonie Mukiwa.
-              </p>
-            </div>
+          <p className="text-base sm:text-lg text-cyan-100 mb-4 z-10 text-center max-w-xl">
+            Welcome! This app helps our group stay organized, track facilitators, and keep everyone on schedule for CEH v13. <span className="hidden sm:inline">Prepare, present, and level up your skills together.</span>
+          </p>
+          <div className="flex flex-col items-center gap-2 z-10">
+            <span className="text-cyan-400 text-xs font-semibold uppercase tracking-widest">Current Presenter</span>
+            {showFacilitatorName ? (
+              <span className="text-3xl sm:text-4xl font-bold text-white tracking-wide drop-shadow-lg animate-pulse">
+                {teamMembers[facilitatorIndex]}
+              </span>
+            ) : (
+              <span className="text-xl text-gray-300 italic">Facilitator will be revealed at 8:00 PM CAT</span>
+            )}
+            {/* Next Meeting Info (moved into hero section) */}
+            <span className="mt-4 text-base sm:text-lg leading-relaxed text-cyan-200 bg-gray-900/60 rounded px-4 py-2 shadow border border-cyan-700/20">
+              <strong>Next Meeting:</strong> {nextMeetingDate}
+            </span>
           </div>
+        </section>
 
-          {/* Timetable Accordion */}
-          <div className="lg:w-1/2 flex flex-col gap-4 p-4 sm:p-6 bg-gray-800 dark:bg-gray-900 rounded-lg shadow-lg">
-            <h2 className="text-xl sm:text-2xl font-semibold text-center text-cyan-300">
-              CEH Study Timetable
-            </h2>
-            <div className="space-y-2 overflow-auto max-h-[calc(100vh-200px)]">
-              {timetable.map((week, index) => (
-                <div key={index} className="border-b border-gray-600">
-                  <button
-                    onClick={() => toggleWeek(index)}
-                    className="w-full flex justify-between items-center p-3 sm:p-4 text-left text-base sm:text-lg font-medium bg-gray-700 dark:bg-gray-800 hover:bg-gray-600 dark:hover:bg-gray-700 transition-colors rounded-t-md"
-                  >
-                    <span className="leading-relaxed">{week.week}: {week.title}</span>
-                    <span>{openWeek === index ? "−" : "+"}</span>
-                  </button>
-                  {openWeek === index && (
-                    <div className="p-3 sm:p-4 bg-gray-100 dark:bg-gray-200 text-gray-900 dark:text-gray-800 rounded-b-md">
-                      <ul className="list-disc pl-5 space-y-1 sm:space-y-2">
-                        {week.details.map((detail, i) => (
-                          <li key={i} className="text-sm sm:text-base leading-relaxed">
-                            {detail}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                </div>
+        {/* Topics Section (custom order for demo) */}
+        <div className="w-full grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
+          {/* Previous Topic: Week 2 */}
+          <div className="flex flex-col items-start bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl shadow-lg p-6 min-h-[200px] w-full border border-cyan-700/30 transition-transform hover:scale-[1.03] hover:shadow-xl overflow-visible max-w-lg mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">Previous</span>
+            <span className="font-semibold text-base sm:text-lg text-cyan-200 mb-1 truncate w-full" title={timetable[1].week}>{timetable[1].week}</span>
+            <span className="text-sm sm:text-base text-white font-medium mb-2 truncate w-full" title={timetable[1].title}>{timetable[1].title}</span>
+            <ul className="list-disc pl-5 text-sm text-cyan-100 space-y-1 mt-2">
+              {timetable[1].details.map((d, i) => (
+                <li key={i}>{d}</li>
               ))}
-            </div>
+            </ul>
+          </div>
+          {/* Current Topic: Week 3 */}
+          <div className="flex flex-col items-start bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl shadow-lg p-6 min-h-[200px] w-full border border-cyan-700/30 transition-transform hover:scale-[1.03] hover:shadow-xl overflow-visible max-w-lg mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">Current</span>
+            <span className="font-semibold text-base sm:text-lg text-cyan-200 mb-1 truncate w-full" title={timetable[2].week}>{timetable[2].week}</span>
+            <span className="text-sm sm:text-base text-white font-medium mb-2 truncate w-full" title={timetable[2].title}>{timetable[2].title}</span>
+            <ul className="list-disc pl-5 text-sm text-cyan-100 space-y-1 mt-2">
+              {timetable[2].details.map((d, i) => (
+                <li key={i}>{d}</li>
+              ))}
+            </ul>
+          </div>
+          {/* Next Topic: Week 3 part 2 (custom, not in timetable) */}
+          <div className="flex flex-col items-start bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl shadow-lg p-6 min-h-[200px] w-full border border-cyan-700/30 transition-transform hover:scale-[1.03] hover:shadow-xl overflow-visible max-w-lg mx-auto">
+            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">Next</span>
+            <span className="font-semibold text-base sm:text-lg text-cyan-200 mb-1 truncate w-full" title="Week 3 (Part 2)">Week 3 (Part 2)</span>
+            <span className="text-sm sm:text-base text-white font-medium mb-2 truncate w-full" title="Domain 3: Scanning Networks (Continued)">Domain 3: Scanning Networks (Continued)</span>
+            <ul className="list-disc pl-5 text-sm text-cyan-100 space-y-1 mt-2">
+              <li>Advanced Nmap scripting</li>
+              <li>Banner grabbing, OS fingerprinting</li>
+              <li>Lab: Deep scan and analysis</li>
+            </ul>
           </div>
         </div>
 
-        <footer className="mt-6 sm:mt-8 text-center">
-          <p className="text-sm sm:text-base text-gray-400 leading-relaxed">
-            Built for Ethical Hacking v13 Certification Study Group
-          </p>
-        </footer>
+        {/* Reveal All Topics Button */}
+        <div className="flex justify-center mt-4 w-full">
+          <button
+            className="bg-cyan-700 hover:bg-cyan-600 text-white font-semibold py-2 px-6 rounded-lg shadow transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400"
+            onClick={() => setShowAllTopics((prev) => !prev)}
+            aria-expanded={showAllTopics ? "true" : "false"}
+            aria-controls="all-topics-accordion"
+          >
+            {showAllTopics ? 'Hide Full Schedule' : 'Show Full Schedule'}
+          </button>
+        </div>
+
+        {/* All Topics Accordion */}
+        {showAllTopics && (
+          <div id="all-topics-accordion" className="w-full mt-4 space-y-2">
+            {timetable.map((week, idx) => (
+              <div key={week.week} className="bg-gray-800 rounded-lg shadow border border-cyan-700/20">
+                <button
+                  className="w-full flex justify-between items-center px-4 py-3 text-left focus:outline-none focus:ring-2 focus:ring-cyan-400"
+                  onClick={() => setOpenWeek(openWeek === idx ? null : idx)}
+                  aria-expanded={openWeek === idx ? "true" : "false"}
+                  aria-controls={`week-details-${idx}`}
+                >
+                  <span className="font-semibold text-cyan-300 text-sm sm:text-base truncate" title={week.week}>{week.week}</span>
+                  <span className="ml-2 text-cyan-100 text-xs sm:text-sm font-medium truncate" title={week.title}>{week.title}</span>
+                  <span className="ml-auto text-cyan-400 text-lg">{openWeek === idx ? '−' : '+'}</span>
+                </button>
+                {openWeek === idx && (
+                  <div id={`week-details-${idx}`} className="px-6 pb-4 pt-1 animate-fade-in">
+                    <ul className="list-disc pl-5 text-sm text-cyan-100 space-y-1">
+                      {week.details.map((d, i) => (
+                        <li key={i}>{d}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Next Meeting Info (removed, now in hero section) */}
       </div>
     </div>
   );
 }
+
+// Remove the custom output from the generator block in schema.prisma for default import
+// generator client {
+//   provider = "prisma-client-js"
+// }
+// Then run: npx prisma generate --no-engine
+//
+// In your API route, update the import:
+// import { PrismaClient } from "@prisma/client";
+//
+// If you want to keep the custom output, use:
+// import { PrismaClient } from "../../../generated/prisma";
+//
+// After making these changes, restart your dev server.
