@@ -227,26 +227,6 @@ export default function Home() {
   //   setOpenWeek(index === openWeek ? null : index);
   // };
 
-  // Helper to get previous/current/next topic info
-  const getTopicInfo = (offset: -1 | 0 | 1, facilitatorIdx: number, timetableArr: typeof timetable) => {
-    let weekIdx = facilitatorIdx + offset;
-    if (weekIdx < 0) weekIdx = timetableArr.length - 1;
-    if (weekIdx >= timetableArr.length) weekIdx = 0;
-    const week = timetableArr[weekIdx];
-    return week;
-  };
-
-  // TopicCard component (improved design & mobile responsive)
-  const TopicCard = ({ label, weekInfo }: { label: string; weekInfo: { week: string; title: string; details: string[] } }) => (
-    <div
-      className="flex flex-col items-start bg-gradient-to-br from-gray-800 to-gray-700 rounded-xl shadow-lg p-4 min-h-[140px] w-full border border-cyan-700/30 transition-transform hover:scale-[1.03] hover:shadow-xl"
-    >
-      <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 mb-1">{label}</span>
-      <span className="font-semibold text-base sm:text-lg text-cyan-200 mb-1 truncate w-full" title={weekInfo.week}>{weekInfo.week}</span>
-      <span className="text-sm sm:text-base text-white font-medium mb-2 truncate w-full" title={weekInfo.title}>{weekInfo.title}</span>
-      {/* Optionally, show details: <ul>...</ul> */}
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 text-white font-mono relative">
