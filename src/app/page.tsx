@@ -232,17 +232,19 @@ export default function Home() {
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 to-gray-800 text-white font-mono relative">
       {/* Info Button */}
       <button
-        className="absolute top-4 right-4 text-cyan-300 text-2xl hover:text-cyan-400 focus:outline-none"
+        className="fixed top-4 right-4 z-[100] text-cyan-300 text-2xl hover:text-cyan-400 focus:outline-none focus:ring-2 focus:ring-cyan-400 active:scale-95"
         aria-label="Info"
+        style={{ touchAction: 'manipulation' }}
         onClick={() => setShowInfo(true)}
+        tabIndex={0}
       >
         <FiInfo />
       </button>
 
       {/* Info Modal */}
       {showInfo && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-gray-900 rounded-lg shadow-lg p-6 max-w-md w-full relative">
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 p-2 sm:p-0 overflow-y-auto">
+          <div className="bg-gray-900 rounded-lg shadow-lg p-4 sm:p-6 w-full max-w-md relative mx-auto my-8 sm:my-0 overflow-y-auto">
             <button
               className="absolute top-2 right-2 text-gray-400 hover:text-cyan-400 text-xl"
               onClick={() => setShowInfo(false)}
@@ -379,23 +381,9 @@ export default function Home() {
             ))}
           </div>
         )}
-
         {/* Next Meeting Info (removed, now in hero section) */}
       </div>
     </div>
   );
 }
-
-// Remove the custom output from the generator block in schema.prisma for default import
-// generator client {
-//   provider = "prisma-client-js"
-// }
-// Then run: npx prisma generate --no-engine
-//
-// In your API route, update the import:
-// import { PrismaClient } from "@prisma/client";
-//
-// If you want to keep the custom output, use:
-// import { PrismaClient } from "../../../generated/prisma";
-//
-// After making these changes, restart your dev server.
+ 
