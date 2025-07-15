@@ -9,9 +9,9 @@ export default function Home() {
   const [nextMeetingDate, setNextMeetingDate] = useState("");
   const [showInfo, setShowInfo] = useState(false);
   const [showAllTopics, setShowAllTopics] = useState(false);
-  const [openWeek, setOpenWeek] = useState(null);
+  const [openWeek, setOpenWeek] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState<string | null>(null);
 
   const timetable = [
     {
@@ -162,7 +162,7 @@ export default function Home() {
         timeZone: "Africa/Harare",
       });
     }
-    let daysUntilNextMeeting = day <= 1 ? 2 - day : day === 2 ? 2 : day === 3 ? 1 : day === 4 ? 5 : 2 + (7 - day);
+    const daysUntilNextMeeting = day <= 1 ? 2 - day : day === 2 ? 2 : day === 3 ? 1 : day === 4 ? 5 : 2 + (7 - day);
     const nextDate = new Date(catNow);
     nextDate.setDate(catNow.getDate() + daysUntilNextMeeting);
     nextDate.setHours(20, 0, 0, 0);
@@ -231,7 +231,7 @@ export default function Home() {
 
     fetchFacilitator();
     checkTime();
-    setNextMeetingDate(getNextMeetingDateTime()); // Fixed typo here
+    setNextMeetingDate(getNextMeetingDateTime());
     const generalInterval = setInterval(() => {
       fetchFacilitator();
       checkTime();
