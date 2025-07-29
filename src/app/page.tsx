@@ -1,3 +1,5 @@
+// file path: src/app/page.tsx
+
 "use client";
 import { useState, useEffect } from "react";
 import { FiInfo, FiX } from "react-icons/fi";
