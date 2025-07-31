@@ -1,0 +1,14 @@
+node_modules
+coverage
+.git
+*.log
+dist
+.next
+Dockerfile
+.env
+*.md
+.vscode
+.idea
+*.test.js
+*.test.ts
+*.test.tsx

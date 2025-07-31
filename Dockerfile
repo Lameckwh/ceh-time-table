@@ -1,8 +1,11 @@
 # Multi-stage Dockerfile for Next.js app on Red Hat UBI (OpenShift-ready)
 # --- Build Stage ---
-FROM registry.access.redhat.com/ubi8/nodejs-20 AS builder
 
+FROM registry.access.redhat.com/ubi8/nodejs-20 AS builder
 WORKDIR /app
+USER 0
+RUN chown -R 1001:0 /app
+USER 1001
 
 # Install dependencies
 COPY package.json package-lock.json* ./
@@ -15,9 +18,17 @@ COPY . .
 RUN npm run build
 
 # --- Production Stage ---
-FROM registry.access.redhat.com/ubi8/nodejs-20-minimal
 
+FROM registry.access.redhat.com/ubi8/nodejs-20-minimal
 WORKDIR /app
+LABEL io.openshift.expose-services="3000:http" \
+      io.openshift.tags="nextjs,nodejs,ubi8" \
+      maintainer="Lameckwh"
+USER 0
+RUN chown -R 1001:0 /app \
+    && chgrp -R 0 /app \
+    && chmod -R g=u /app
+USER 1001
 
 # Copy only necessary files from builder
 COPY --from=builder /app/package.json ./
@@ -26,6 +37,9 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/next.config.* ./
 COPY --from=builder /app/.env ./
+
+# Declare volume for persistent or shared data (adjust path as needed)
+VOLUME ["/app/data"]
 
 # Expose port (default for Next.js)
 EXPOSE 3000
