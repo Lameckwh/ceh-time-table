@@ -7,11 +7,13 @@ USER 0
 RUN chown -R 1001:0 /app
 USER 1001
 
-# Install dependencies
-COPY package.json package-lock.json* ./
-RUN npm install --legacy-peer-deps
 
-# Copy source code
+# Copy package files
+COPY package.json package-lock.json* ./
+# Copy prisma schema before npm install
+COPY prisma ./prisma
+RUN npm install --legacy-peer-deps
+# Copy the rest of the source code
 COPY . .
 
 # Build Next.js app
@@ -36,7 +38,7 @@ COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/next.config.* ./
-COPY --from=builder /app/.env ./
+COPY .env ./
 
 # Declare volume for persistent or shared data (adjust path as needed)
 VOLUME ["/app/data"]
