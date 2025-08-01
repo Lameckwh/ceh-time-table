@@ -10,5 +10,13 @@ export const moduleNameMapper = {
     '^@/(.*)$': '<rootDir>/src/$1',
 };
 export const transform = {
-    '^.+\\.(ts|tsx|js|jsx)$': 'babel-jest',
+    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(js|jsx)$': 'babel-jest',
+};
+export const globals = {
+    'ts-jest': {
+        tsconfig: {
+            jsx: 'react-jsx',
+        },
+    },
 };
