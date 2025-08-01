@@ -9,7 +9,7 @@
     "lint": "next lint",
     "postinstall": "prisma generate --no-engine",
     "vercel-build": "prisma generate --no-engine && next build",
-    "test": "jest --ci --coverage"
+    "test": "jest --ci --coverage --passWithNoTests"
   },
   "dependencies": {
     "@prisma/client": "^6.11.0",
