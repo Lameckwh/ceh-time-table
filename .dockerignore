@@ -5,7 +5,6 @@ coverage
 dist
 .next
 Dockerfile
-# .env (allow .env to be included in build context)
 *.md
 .vscode
 .idea

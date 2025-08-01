@@ -1,17 +1,19 @@
 # Multi-stage Dockerfile for Next.js app on Red Hat UBI (OpenShift-ready)
 # --- Build Stage ---
 
+
 FROM registry.access.redhat.com/ubi8/nodejs-20 AS builder
 WORKDIR /app
 USER 0
 RUN chown -R 1001:0 /app
-USER 1001
-
 
 # Copy package files
 COPY package.json package-lock.json* ./
 # Copy prisma schema before npm install
 COPY prisma ./prisma
+# Ensure correct permissions for user 1001
+RUN chown -R 1001:0 /app
+USER 1001
 RUN npm install --legacy-peer-deps
 # Copy the rest of the source code
 COPY . .
